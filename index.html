@@ -82,7 +82,7 @@
   .seat:hover{transform:translate(-50%,-50%) scale(1.12);z-index:5}
   .seat:focus-visible{outline:2px solid var(--gold);outline-offset:2px}
   .seat.filled{background:var(--sage);border-color:var(--sage-deep);color:#fff;
-    overflow:visible;white-space:nowrap;font-size:6.5px;letter-spacing:-.01em;
+    overflow:visible;white-space:nowrap;font-size:8px;letter-spacing:-.01em;
     text-shadow:0 0 3px var(--sage-deep),0 0 3px var(--sage-deep)}
   .seat.dim{opacity:.28}
   .seat.match{box-shadow:0 0 0 3px var(--gold);z-index:6}
@@ -363,7 +363,7 @@ function buildArea(areaKey,stageId){
     const b=document.createElement('button');
     b.className='seat';b.dataset.id=s.id;b.dataset.area=areaKey;
     b.style.left=pct(s.x,A.W);b.style.top=pct(s.y,A.H);
-    b.style.width='3.2%';b.style.aspectRatio='1';b.style.minWidth='22px';b.style.minHeight='22px';
+    b.style.width='4.5%';b.style.aspectRatio='1';b.style.minWidth='30px';b.style.minHeight='30px';
     b.title='';
     b.addEventListener('click',()=>openModal(s.id,areaKey));
     stage.appendChild(b);
