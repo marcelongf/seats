@@ -1,0 +1,516 @@
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Seating Chart</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,400;9..144,500;9..144,600&family=Inter:wght@400;500;600&display=swap" rel="stylesheet">
+<style>
+  :root{
+    --bg:#F6F4EF;
+    --surface:#FFFFFF;
+    --ink:#2C322C;
+    --body:#565B53;
+    --muted:#8A8E83;
+    --sage:#5E7361;
+    --sage-deep:#43543F;
+    --gold:#B08A4F;
+    --seat-empty:#E7E5DB;
+    --seat-border:#CFCcC0;
+    --table:#ECE9DF;
+    --line:#D8D4C8;
+    --shadow:0 1px 2px rgba(44,50,44,.06),0 8px 24px rgba(44,50,44,.06);
+  }
+  *{box-sizing:border-box}
+  html,body{margin:0;background:var(--bg);color:var(--body);
+    font-family:'Inter',system-ui,sans-serif;-webkit-font-smoothing:antialiased}
+  .wrap{max-width:1120px;margin:0 auto;padding:28px 20px 64px}
+
+  header.top{display:flex;flex-wrap:wrap;align-items:flex-end;justify-content:space-between;
+    gap:16px;border-bottom:1px solid var(--line);padding-bottom:18px;margin-bottom:24px}
+  .brand .eyebrow{font-size:11px;letter-spacing:.28em;text-transform:uppercase;
+    color:var(--gold);font-weight:600;margin:0 0 6px}
+  .brand h1{font-family:'Fraunces',serif;font-weight:500;color:var(--ink);
+    font-size:34px;line-height:1.05;margin:0;letter-spacing:-.01em}
+  .brand .sub{margin:6px 0 0;font-size:13px;color:var(--muted)}
+  .totals{text-align:right;font-size:13px;color:var(--body)}
+  .totals .big{font-family:'Fraunces',serif;font-size:30px;color:var(--ink);
+    font-weight:500;display:block;line-height:1}
+  .totals .big span{color:var(--muted);font-size:18px}
+
+  .toolbar{display:flex;flex-wrap:wrap;gap:10px;align-items:center;margin-bottom:26px}
+  .search{position:relative;flex:1;min-width:200px}
+  .search input{width:100%;padding:11px 14px 11px 38px;border:1px solid var(--line);
+    border-radius:10px;background:var(--surface);font:inherit;font-size:14px;color:var(--ink)}
+  .search input:focus{outline:2px solid var(--sage);outline-offset:1px;border-color:transparent}
+  .search svg{position:absolute;left:12px;top:50%;transform:translateY(-50%);
+    width:16px;height:16px;stroke:var(--muted)}
+  button.act{padding:11px 16px;border:1px solid var(--line);border-radius:10px;
+    background:var(--surface);color:var(--ink);font:inherit;font-size:13px;font-weight:500;
+    cursor:pointer;transition:.15s}
+  button.act:hover{border-color:var(--sage);color:var(--sage-deep)}
+  button.act.ghost{background:transparent}
+
+  .area{background:var(--surface);border:1px solid var(--line);border-radius:16px;
+    box-shadow:var(--shadow);padding:20px 20px 12px;margin-bottom:22px}
+  .area-head{display:flex;align-items:center;justify-content:space-between;gap:12px;margin-bottom:6px}
+  .area-head h2{font-family:'Fraunces',serif;font-weight:500;color:var(--ink);
+    font-size:22px;margin:0;display:flex;align-items:center;gap:10px}
+  .area-head h2 .dot{width:7px;height:7px;border-radius:50%;background:var(--gold)}
+  .count{font-size:13px;color:var(--body);white-space:nowrap}
+  .count b{color:var(--sage-deep)}
+  .hint{font-size:12px;color:var(--muted);margin:2px 0 10px}
+
+  .stage-scroll{overflow-x:auto;padding-bottom:6px}
+  .stage{position:relative;width:100%}
+  .stage.mezz{min-width:880px;aspect-ratio:1040/620}
+  .stage.mega{min-width:560px;max-width:640px;aspect-ratio:780/780;margin:0 auto}
+
+  .table{position:absolute;background:var(--table);border:1px solid var(--line);
+    transform:translate(-50%,-50%);display:flex;align-items:center;justify-content:center}
+  .table.rect{border-radius:7px}
+  .table.round{border-radius:50%}
+  .seg{position:absolute;font-size:11px;color:var(--muted);font-weight:600;
+    transform:translate(-50%,-50%);font-family:'Inter'}
+  .tlabel{position:absolute;transform:translate(-50%,-50%);text-align:center;
+    font-size:11px;color:var(--muted);font-weight:600;letter-spacing:.04em}
+
+  .seat{position:absolute;transform:translate(-50%,-50%);border-radius:50%;
+    border:1.5px solid var(--seat-border);background:var(--seat-empty);
+    cursor:pointer;display:flex;align-items:center;justify-content:center;
+    font-size:10px;font-weight:600;color:var(--muted);padding:0;
+    transition:transform .12s,box-shadow .12s,background .12s;line-height:1}
+  .seat:hover{transform:translate(-50%,-50%) scale(1.12);z-index:5}
+  .seat:focus-visible{outline:2px solid var(--gold);outline-offset:2px}
+  .seat.filled{background:var(--sage);border-color:var(--sage-deep);color:#fff}
+  .seat.dim{opacity:.28}
+  .seat.match{box-shadow:0 0 0 3px var(--gold);z-index:6}
+  .seat.hidden{display:none}
+
+  /* lista por mesa */
+  details.bymesa{background:var(--surface);border:1px solid var(--line);border-radius:16px;
+    box-shadow:var(--shadow);padding:0 20px;margin-top:8px}
+  details.bymesa>summary{list-style:none;cursor:pointer;padding:18px 0;
+    font-family:'Fraunces',serif;font-size:18px;color:var(--ink);font-weight:500;
+    display:flex;align-items:center;justify-content:space-between}
+  details.bymesa>summary::-webkit-details-marker{display:none}
+  details.bymesa>summary .chev{transition:.2s;color:var(--muted);font-size:13px}
+  details.bymesa[open]>summary .chev{transform:rotate(180deg)}
+  .mesa-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(220px,1fr));
+    gap:14px;padding:0 0 22px}
+  .mesa-card{border:1px solid var(--line);border-radius:11px;padding:13px 15px}
+  .mesa-card h4{margin:0 0 8px;font-size:12px;letter-spacing:.06em;text-transform:uppercase;
+    color:var(--sage-deep);font-weight:600;display:flex;justify-content:space-between}
+  .mesa-card h4 span{color:var(--muted);font-weight:500;letter-spacing:0;text-transform:none}
+  .mesa-card ol{margin:0;padding-left:18px;font-size:13px;color:var(--body)}
+  .mesa-card ol li{margin:3px 0}
+  .mesa-card ol li.free{color:var(--muted);font-style:italic;list-style:none;margin-left:-18px}
+
+  /* modal */
+  .overlay{position:fixed;inset:0;background:rgba(44,50,44,.34);display:none;
+    align-items:center;justify-content:center;padding:20px;z-index:50}
+  .overlay.show{display:flex}
+  .modal{background:var(--surface);border-radius:16px;width:100%;max-width:380px;
+    padding:24px;box-shadow:0 24px 60px rgba(44,50,44,.28)}
+  .modal .m-eyebrow{font-size:11px;letter-spacing:.2em;text-transform:uppercase;
+    color:var(--gold);font-weight:600;margin:0 0 4px}
+  .modal h3{font-family:'Fraunces',serif;font-weight:500;color:var(--ink);
+    font-size:21px;margin:0 0 16px}
+  .modal label{display:block;font-size:12px;color:var(--body);margin:0 0 6px;font-weight:500}
+  .modal input{width:100%;padding:11px 13px;border:1px solid var(--line);border-radius:10px;
+    font:inherit;font-size:15px;color:var(--ink)}
+  .modal input:focus{outline:2px solid var(--sage);outline-offset:1px;border-color:transparent}
+  .modal .m-actions{display:flex;gap:10px;margin-top:18px}
+  .modal .m-actions button{flex:1;padding:11px;border-radius:10px;font:inherit;font-weight:600;
+    font-size:14px;cursor:pointer;border:1px solid transparent}
+  .btn-save{background:var(--sage);color:#fff}
+  .btn-save:hover{background:var(--sage-deep)}
+  .btn-clear{background:transparent;border-color:var(--line)!important;color:var(--body)}
+  .btn-clear:hover{border-color:#c8836f!important;color:#a3543f}
+
+  footer{margin-top:30px;font-size:12px;color:var(--muted);text-align:center;
+    border-top:1px solid var(--line);padding-top:18px}
+
+  @media print{
+    .toolbar,.overlay,details.bymesa>summary .chev{display:none!important}
+    .stage-scroll{overflow:visible}
+    .stage.mezz,.stage.mega{min-width:0}
+    .area,details.bymesa{box-shadow:none;break-inside:avoid}
+    details.bymesa[open]{}
+  }
+</style>
+
+<div class="wrap">
+  <header class="top">
+    <div class="brand">
+      <p class="eyebrow">Laura &amp; Marcelo</p>
+      <h1>Mapa de lugares</h1>
+      <p class="sub">Pedra Azul, ES &nbsp;&bull;&nbsp; 26 de setembro de 2026</p>
+    </div>
+    <div class="totals">
+      <span class="big" id="totalBig">0<span>/54</span></span>
+      lugares ocupados
+    </div>
+  </header>
+
+  <div class="toolbar">
+    <div class="search">
+      <svg viewBox="0 0 24 24" fill="none" stroke-width="2" stroke-linecap="round"><circle cx="11" cy="11" r="7"/><path d="m20 20-3.5-3.5"/></svg>
+      <input id="search" type="text" placeholder="Buscar convidado pelo nome" autocomplete="off">
+    </div>
+    <button class="act ghost" id="shareBtn">Gerar link</button>
+    <button class="act ghost" id="removeBtn">Remover vazios</button>
+    <button class="act ghost" id="restoreBtn">Restaurar lugares</button>
+    <button class="act ghost" id="printBtn">Imprimir</button>
+    <button class="act ghost" id="exportBtn">Exportar nomes</button>
+    <button class="act ghost" id="importBtn">Importar nomes</button>
+    <button class="act ghost" id="resetBtn">Limpar tudo</button>
+    <input type="file" id="importFile" accept="application/json" style="display:none">
+  </div>
+
+  <section class="area">
+    <div class="area-head">
+      <h2><span class="dot"></span>Mezzanino</h2>
+      <div class="count" id="countMezz"><b>0</b> de 26 lugares</div>
+    </div>
+    <p class="hint">Mesa imperial (trechos 12 a 16) e duas mesas redondas de 7. Toque num lugar para atribuir o convidado.</p>
+    <div class="stage-scroll"><div class="stage mezz" id="stageMezz"></div></div>
+  </section>
+
+  <section class="area">
+    <div class="area-head">
+      <h2><span class="dot"></span>Adega</h2>
+      <div class="count" id="countMega"><b>0</b> de 28 lugares</div>
+    </div>
+    <p class="hint">Imperial horizontal (12 lugares), conjunto em L de 3 mesinhas (6 lugares) e imperial vertical (10 lugares). Toque num lugar para atribuir o convidado.</p>
+    <div class="stage-scroll"><div class="stage mega" id="stageMega"></div></div>
+  </section>
+
+  <details class="bymesa" id="bymesa">
+    <summary>Lista por mesa <span class="chev">&#9662;</span></summary>
+    <div class="mesa-grid" id="mesaGrid"></div>
+  </details>
+
+  <footer>Os nomes ficam salvos neste navegador. Use Imprimir para gerar uma versão em papel ou PDF.</footer>
+</div>
+
+<div class="overlay" id="overlay">
+  <div class="modal">
+    <p class="m-eyebrow" id="mEyebrow">Mezzanino</p>
+    <h3 id="mTitle">Mesa</h3>
+    <label for="mInput">Nome do convidado</label>
+    <input id="mInput" type="text" placeholder="Ex.: Tia Penha" autocomplete="off">
+    <div class="m-actions">
+      <button class="btn-clear" id="btnClear">Remover</button>
+      <button class="btn-save" id="btnSave">Salvar</button>
+    </div>
+  </div>
+</div>
+
+<script>
+/* ---------- geometria dos ambientes ---------- */
+function dist(ax,ay,bx,by){return Math.hypot(ax-bx,ay-by)}
+// distribui n pontos centrados ao longo de um segmento
+function lineSeats(x1,y1,x2,y2,n){
+  const out=[];
+  for(let i=0;i<n;i++){const t=(i+0.5)/n;out.push({x:x1+(x2-x1)*t,y:y1+(y2-y1)*t})}
+  return out;
+}
+function arcSeats(cx,cy,r,n,start){
+  const out=[];
+  for(let i=0;i<n;i++){const a=start+i*(2*Math.PI/n);out.push({x:cx+r*Math.cos(a),y:cy+r*Math.sin(a)})}
+  return out;
+}
+// atribui cada assento ao trecho (segmento) mais próximo
+function nearest(seat,segs){
+  let best=segs[0],bd=1e9;
+  for(const s of segs){const d=dist(seat.x,seat.y,s.cx,s.cy);if(d<bd){bd=d;best=s}}
+  return best.label;
+}
+
+const AREAS={};
+
+/* ===== MEZZANINO (viewBox 1040 x 620) ===== */
+(function(){
+  const W=1040,H=620,seats=[],tables=[],segLabels=[];
+  // mesa imperial trechos 1..5
+  const x0=60,x1=720,yT=250,yB=340;
+  const segs=[];
+  for(let i=0;i<5;i++){const cx=x0+(i+0.5)/5*(x1-x0);segs.push({label:String(1+i),cx,cy:(yT+yB)/2})}
+  tables.push({type:'rect',x:(x0+x1)/2,y:(yT+yB)/2,w:x1-x0,h:yB-yT});
+  segs.forEach(s=>segLabels.push({x:s.cx,y:s.cy,text:s.label}));
+  // assentos: topo, base, cabeceiras
+  let pts=[
+    ...lineSeats(x0,205,x1,205,5),
+    ...lineSeats(x0,385,x1,385,5),
+    {x:30,y:295},{x:750,y:295}
+  ];
+  pts.forEach(p=>seats.push({x:p.x,y:p.y,table:nearest(p,segs),area:'mezz'}));
+  // redondas de 7
+  const rounds=[{cx:895,cy:165,label:'R1'},{cx:895,cy:470,label:'R2'}];
+  rounds.forEach(r=>{
+    tables.push({type:'round',x:r.cx,y:r.cy,w:128,h:128});
+    segLabels.push({x:r.cx,y:r.cy,text:r.label==='R1'?'Redonda 1':'Redonda 2'});
+    arcSeats(r.cx,r.cy,98,7,-Math.PI/2).forEach(p=>seats.push({x:p.x,y:p.y,table:r.label,area:'mezz'}));
+  });
+  AREAS.mezz={W,H,seats,tables,segLabels,
+    order:['1','2','3','4','5','R1','R2'],
+    names:{'1':'Mesa 1','2':'Mesa 2','3':'Mesa 3','4':'Mesa 4','5':'Mesa 5','R1':'Redonda 1','R2':'Redonda 2'}};
+})();
+
+/* ===== ADEGA / andar inferior (viewBox 780 x 780) =====
+   Imperial horizontal (mesas 6-10) = 12 lugares
+   Conjunto em L de 3 mesinhas (mesas 11,12,13) = 6 lugares
+   Imperial vertical (mesas 14-17) = 10 lugares  ->  28 lugares */
+(function(){
+  const W=780,H=780,seats=[],tables=[],segLabels=[];
+
+  // imperial horizontal de N trechos = (N topo + N base + 2 cabeceiras)
+  function impH(labels,x0,x1,yT,yB){
+    const n=labels.length,segs=[];
+    for(let i=0;i<n;i++){const cx=x0+(i+0.5)/n*(x1-x0);segs.push({label:labels[i],cx,cy:(yT+yB)/2})}
+    tables.push({type:'rect',x:(x0+x1)/2,y:(yT+yB)/2,w:x1-x0,h:yB-yT});
+    segs.forEach(s=>segLabels.push({x:s.cx,y:s.cy,text:s.label}));
+    const midY=(yT+yB)/2;
+    const pts=[...lineSeats(x0,yT-44,x1,yT-44,n),...lineSeats(x0,yB+44,x1,yB+44,n),
+      {x:x0-32,y:midY},{x:x1+32,y:midY}];
+    pts.forEach(p=>seats.push({x:p.x,y:p.y,table:nearest(p,segs),area:'mega'}));
+  }
+  // imperial vertical de N trechos = (N direita + N esquerda + 2 cabeceiras)
+  function impV(labels,xL,xR,yT,yB){
+    const n=labels.length,segs=[];
+    for(let i=0;i<n;i++){const cy=yT+(i+0.5)/n*(yB-yT);segs.push({label:labels[i],cx:(xL+xR)/2,cy})}
+    tables.push({type:'rect',x:(xL+xR)/2,y:(yT+yB)/2,w:xR-xL,h:yB-yT});
+    segs.forEach(s=>segLabels.push({x:s.cx,y:s.cy,text:s.label}));
+    const midX=(xL+xR)/2;
+    const pts=[...lineSeats(xR+32,yT,xR+32,yB,n),...lineSeats(xL-32,yT,xL-32,yB,n),
+      {x:midX,y:yT-32},{x:midX,y:yB+32}];
+    pts.forEach(p=>seats.push({x:p.x,y:p.y,table:nearest(p,segs),area:'mega'}));
+  }
+
+  // Imperial horizontal (topo, esquerda): mesas 6 a 10 = 12 lugares
+  impH(['6','7','8','9','10'],40,470,70,150);
+
+  // Conjunto em L (topo, direita): mesas 11, 12, 13 = 6 lugares
+  const sq=72;
+  const Ls=[['11',{cx:590,cy:120}],['12',{cx:666,cy:120}],['13',{cx:666,cy:196}]];
+  Ls.forEach(([lab,t])=>{
+    tables.push({type:'rect',x:t.cx,y:t.cy,w:sq,h:sq});
+    segLabels.push({x:t.cx,y:t.cy,text:lab});
+  });
+  const lpts=[
+    {x:590,y:72,table:'11'},{x:666,y:72,table:'12'},{x:712,y:120,table:'12'},
+    {x:712,y:196,table:'13'},{x:666,y:244,table:'13'},{x:618,y:196,table:'13'}
+  ];
+  lpts.forEach(p=>seats.push({x:p.x,y:p.y,table:p.table,area:'mega'}));
+
+  // Imperial vertical (base, direita): mesas 14 a 17 = 10 lugares
+  impV(['14','15','16','17'],560,648,380,700);
+
+  const names={};const order=[];
+  for(let i=6;i<=17;i++){order.push(String(i));names[String(i)]='Mesa '+i}
+  AREAS.mega={W,H,seats,tables,segLabels,order,names};
+})();
+
+/* ---------- assentos com id ---------- */
+let im=0;AREAS.mezz.seats.forEach(s=>s.id='s'+(im++));
+let ia=0;AREAS.mega.seats.forEach(s=>s.id='a'+(ia++));
+
+/* ---------- estado / persistência ---------- */
+let assignments={};
+let removed=new Set();
+const KEY='seating:laura-marcelo:v1';
+const REMKEY='seating:laura-marcelo:removed:v2';
+// Funciona aqui no Claude (window.storage) e tambem em site hospedado (localStorage).
+const store={
+  async get(k){
+    try{if(window.storage){const r=await window.storage.get(k);return r&&r.value?r.value:null}}catch(e){}
+    try{return localStorage.getItem(k)}catch(e){return null}
+  },
+  async set(k,v){
+    try{if(window.storage){await window.storage.set(k,v);return}}catch(e){}
+    try{localStorage.setItem(k,v)}catch(e){}
+  }
+};
+async function loadState(){
+  try{const v=await store.get(KEY);if(v)assignments=JSON.parse(v)}catch(e){assignments={}}
+}
+async function saveState(){ await store.set(KEY,JSON.stringify(assignments)); }
+async function loadRemoved(){
+  try{const v=await store.get(REMKEY);if(v)removed=new Set(JSON.parse(v))}catch(e){removed=new Set()}
+}
+async function saveRemoved(){ await store.set(REMKEY,JSON.stringify([...removed])); }
+
+/* ---------- render ---------- */
+function buildArea(areaKey,stageId){
+  const A=AREAS[areaKey],stage=document.getElementById(stageId);
+  const pct=(v,d)=>(v/d*100)+'%';
+  A.tables.forEach(t=>{
+    const el=document.createElement('div');
+    el.className='table '+(t.type==='round'?'round':'rect');
+    el.style.left=pct(t.x,A.W);el.style.top=pct(t.y,A.H);
+    el.style.width=pct(t.w,A.W);el.style.height=pct(t.h,A.H);
+    stage.appendChild(el);
+  });
+  A.segLabels.forEach(s=>{
+    const el=document.createElement('div');el.className='tlabel';
+    el.style.left=pct(s.x,A.W);el.style.top=pct(s.y,A.H);el.textContent=s.text;
+    stage.appendChild(el);
+  });
+  A.seats.forEach(s=>{
+    if(removed.has(s.id))return;
+    const b=document.createElement('button');
+    b.className='seat';b.dataset.id=s.id;b.dataset.area=areaKey;
+    b.style.left=pct(s.x,A.W);b.style.top=pct(s.y,A.H);
+    b.style.width='3.2%';b.style.aspectRatio='1';b.style.minWidth='22px';b.style.minHeight='22px';
+    b.title='';
+    b.addEventListener('click',()=>openModal(s.id,areaKey));
+    stage.appendChild(b);
+  });
+}
+function buildAll(){
+  document.getElementById('stageMezz').innerHTML='';
+  document.getElementById('stageMega').innerHTML='';
+  buildArea('mezz','stageMezz');
+  buildArea('mega','stageMega');
+}
+function initials(name){
+  const p=name.trim().split(/\s+/);
+  if(p.length===1)return p[0].slice(0,2).toUpperCase();
+  return (p[0][0]+p[p.length-1][0]).toUpperCase();
+}
+function refresh(){
+  let mezzT=0,megaT=0,mezzF=0,megaF=0;
+  document.querySelectorAll('.seat').forEach(b=>{
+    const area=b.dataset.area;area==='mezz'?mezzT++:megaT++;
+    const name=assignments[b.dataset.id];
+    if(name){b.classList.add('filled');b.textContent=initials(name);b.title=name;
+      area==='mezz'?mezzF++:megaF++;}
+    else{b.classList.remove('filled');b.textContent='';b.title='';}
+  });
+  const totF=mezzF+megaF, totT=mezzT+megaT;
+  document.getElementById('totalBig').innerHTML=totF+'<span>/'+totT+'</span>';
+  document.getElementById('countMezz').innerHTML='<b>'+mezzF+'</b> de '+mezzT+' lugares';
+  document.getElementById('countMega').innerHTML='<b>'+megaF+'</b> de '+megaT+' lugares';
+  buildList();
+  applySearch();
+}
+function buildList(){
+  const grid=document.getElementById('mesaGrid');grid.innerHTML='';
+  ['mezz','mega'].forEach(areaKey=>{
+    const A=AREAS[areaKey];
+    A.order.forEach(tbl=>{
+      const seats=A.seats.filter(s=>s.table===tbl&&!removed.has(s.id));
+      if(seats.length===0)return;
+      const filled=seats.filter(s=>assignments[s.id]);
+      const card=document.createElement('div');card.className='mesa-card';
+      const head=document.createElement('h4');
+      head.innerHTML=A.names[tbl]+' <span>'+filled.length+'/'+seats.length+'</span>';
+      card.appendChild(head);
+      const ol=document.createElement('ol');
+      if(filled.length===0){const li=document.createElement('li');li.className='free';li.textContent='Sem convidados ainda';ol.appendChild(li);}
+      else filled.forEach(s=>{const li=document.createElement('li');li.textContent=assignments[s.id];ol.appendChild(li);});
+      card.appendChild(ol);grid.appendChild(card);
+    });
+  });
+}
+
+/* ---------- modal ---------- */
+let current=null;
+function openModal(id,areaKey){
+  current=id;
+  const A=AREAS[areaKey];const s=A.seats.find(x=>x.id===id);
+  document.getElementById('mEyebrow').textContent=areaKey==='mezz'?'Mezzanino':'Mega';
+  document.getElementById('mTitle').textContent=A.names[s.table];
+  const inp=document.getElementById('mInput');inp.value=assignments[id]||'';
+  document.getElementById('overlay').classList.add('show');
+  setTimeout(()=>inp.focus(),30);
+}
+function closeModal(){document.getElementById('overlay').classList.remove('show');current=null;}
+document.getElementById('btnSave').addEventListener('click',async()=>{
+  const v=document.getElementById('mInput').value.trim();
+  if(v)assignments[current]=v;else delete assignments[current];
+  await saveState();refresh();closeModal();
+});
+document.getElementById('btnClear').addEventListener('click',async()=>{
+  delete assignments[current];await saveState();refresh();closeModal();
+});
+document.getElementById('mInput').addEventListener('keydown',e=>{if(e.key==='Enter')document.getElementById('btnSave').click()});
+document.getElementById('overlay').addEventListener('click',e=>{if(e.target.id==='overlay')closeModal()});
+document.addEventListener('keydown',e=>{if(e.key==='Escape')closeModal()});
+
+/* ---------- busca ---------- */
+function applySearch(){
+  const q=document.getElementById('search').value.trim().toLowerCase();
+  document.querySelectorAll('.seat').forEach(b=>{
+    b.classList.remove('match','dim');
+    if(!q)return;
+    const name=(assignments[b.dataset.id]||'').toLowerCase();
+    if(name&&name.includes(q))b.classList.add('match');else b.classList.add('dim');
+  });
+}
+document.getElementById('search').addEventListener('input',applySearch);
+
+/* ---------- ações globais ---------- */
+document.getElementById('printBtn').addEventListener('click',()=>{
+  document.getElementById('bymesa').open=true;window.print();
+});
+document.getElementById('resetBtn').addEventListener('click',async()=>{
+  if(confirm('Remover todos os convidados e restaurar todos os lugares?')){
+    assignments={};removed=new Set();await saveState();await saveRemoved();buildAll();refresh();
+  }
+});
+document.getElementById('exportBtn').addEventListener('click',()=>{
+  const blob=new Blob([JSON.stringify(assignments,null,2)],{type:'application/json'});
+  const a=document.createElement('a');a.href=URL.createObjectURL(blob);
+  a.download='mapa-lugares-nomes.json';a.click();setTimeout(()=>URL.revokeObjectURL(a.href),0);
+});
+document.getElementById('importBtn').addEventListener('click',()=>document.getElementById('importFile').click());
+document.getElementById('importFile').addEventListener('change',e=>{
+  const f=e.target.files[0];if(!f)return;
+  const r=new FileReader();
+  r.onload=async()=>{try{assignments=JSON.parse(r.result);await saveState();buildAll();refresh();}
+    catch(err){alert('Arquivo invalido. Use um arquivo exportado por este mapa.')}};
+  r.readAsText(f);e.target.value='';
+});
+document.getElementById('removeBtn').addEventListener('click',async()=>{
+  const empties=[...document.querySelectorAll('.seat')].filter(b=>!assignments[b.dataset.id]);
+  const filledCount=document.querySelectorAll('.seat').length-empties.length;
+  if(filledCount===0){alert('Nenhum nome carregado. Carregue ou importe os nomes antes de remover os vazios.');return;}
+  if(empties.length===0){alert('Nao ha lugares vazios para remover.');return;}
+  if(!confirm('Remover de vez '+empties.length+' lugar(es) vazio(s)? Quem tem nome permanece. Voce pode reabrir com Restaurar lugares.'))return;
+  empties.forEach(b=>{removed.add(b.dataset.id);b.remove();});
+  await saveRemoved();refresh();
+});
+document.getElementById('restoreBtn').addEventListener('click',async()=>{
+  if(removed.size===0){alert('Nao ha lugares removidos para restaurar.');return;}
+  removed=new Set();await saveRemoved();buildAll();refresh();
+});
+
+/* ---------- link compartilhavel (nomes embutidos na URL) ---------- */
+function b64enc(str){return btoa(String.fromCharCode.apply(null,new TextEncoder().encode(str)))}
+function b64dec(b){return new TextDecoder().decode(Uint8Array.from(atob(b),c=>c.charCodeAt(0)))}
+function applyShareHash(){
+  const m=location.hash.match(/[#&]d=([^&]+)/);
+  if(!m)return false;
+  try{const p=JSON.parse(b64dec(decodeURIComponent(m[1])));
+    if(p.a)assignments=p.a;if(p.r)removed=new Set(p.r);return true;}
+  catch(e){return false}
+}
+document.getElementById('shareBtn').addEventListener('click',async()=>{
+  const data=encodeURIComponent(b64enc(JSON.stringify({a:assignments,r:[...removed]})));
+  const base=location.origin&&location.origin!=='null'?location.origin+location.pathname:location.href.split('#')[0];
+  const url=base+'#d='+data;
+  try{await navigator.clipboard.writeText(url);alert('Link copiado. Ele ja vem com os nomes atuais; quem abrir ve o mapa preenchido.');}
+  catch(e){prompt('Copie o link abaixo:',url)}
+});
+
+/* ---------- start ---------- */
+(async function(){
+  await loadState();
+  await loadRemoved();
+  const fromLink=applyShareHash();
+  if(fromLink){await saveState();await saveRemoved();}
+  buildAll();
+  refresh();
+})();
+</script>
