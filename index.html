@@ -81,7 +81,9 @@
     transition:transform .12s,box-shadow .12s,background .12s;line-height:1}
   .seat:hover{transform:translate(-50%,-50%) scale(1.12);z-index:5}
   .seat:focus-visible{outline:2px solid var(--gold);outline-offset:2px}
-  .seat.filled{background:var(--sage);border-color:var(--sage-deep);color:#fff}
+  .seat.filled{background:var(--sage);border-color:var(--sage-deep);color:#fff;
+    overflow:visible;white-space:nowrap;font-size:6.5px;letter-spacing:-.01em;
+    text-shadow:0 0 3px var(--sage-deep),0 0 3px var(--sage-deep)}
   .seat.dim{opacity:.28}
   .seat.match{box-shadow:0 0 0 3px var(--gold);z-index:6}
   .seat.hidden{display:none}
@@ -383,7 +385,7 @@ function refresh(){
   document.querySelectorAll('.seat').forEach(b=>{
     const area=b.dataset.area;area==='mezz'?mezzT++:megaT++;
     const name=assignments[b.dataset.id];
-    if(name){b.classList.add('filled');b.textContent=initials(name);b.title=name;
+    if(name){b.classList.add('filled');b.textContent=name;b.title=name;
       area==='mezz'?mezzF++:megaF++;}
     else{b.classList.remove('filled');b.textContent='';b.title='';}
   });
