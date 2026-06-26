@@ -183,7 +183,7 @@
       <h2><span class="dot"></span>Adega</h2>
       <div class="count" id="countMega"><b>0</b> de 28 lugares</div>
     </div>
-    <p class="hint">Imperial horizontal (mesas 6-11, 14 lugares) e imperial vertical (mesas 12-17, 14 lugares). Toque num lugar para atribuir o convidado.</p>
+    <p class="hint">Imperial horizontal (mesas 6-12, 16 lugares) e imperial vertical (mesas 13-17, 12 lugares). Toque num lugar para atribuir o convidado.</p>
     <div class="stage-scroll"><div class="stage mega" id="stageMega"></div></div>
   </section>
 
@@ -288,11 +288,11 @@ const AREAS={};
     pts.forEach(p=>seats.push({x:p.x,y:p.y,table:nearest(p,segs),area:'mega'}));
   }
 
-  // Imperial horizontal (topo): mesas 6 a 11 = 14 lugares
-  impH(['6','7','8','9','10','11'],40,740,70,150);
+  // Imperial horizontal (topo): mesas 6 a 12 = 16 lugares
+  impH(['6','7','8','9','10','11','12'],40,740,70,150);
 
-  // Imperial vertical (base, direita): mesas 12 a 17 = 14 lugares
-  impV(['12','13','14','15','16','17'],560,648,310,720);
+  // Imperial vertical (base, direita): mesas 13 a 17 = 12 lugares
+  impV(['13','14','15','16','17'],560,648,310,720);
 
   const names={};const order=[];
   for(let i=6;i<=17;i++){order.push(String(i));names[String(i)]='Mesa '+i}
